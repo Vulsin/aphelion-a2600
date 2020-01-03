@@ -1,14 +1,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; sprites.asm
-; Sprites for the Aphelion game for Atari 2600
+; enemies.asm
+; Sprites and subroutines for the enemies
 ;
 ; Written by Craig Mackles
-; https://github.com/vulsin/aphelion-a2600
+; https://github.com/Vulsin/aphelion-a2600
 ;
-; Distributed under the MIT license
+; Distributed under the MIT License
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-SpriteHeight EQU 17
-
-Player
-  .byte #0

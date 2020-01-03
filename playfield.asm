@@ -1,35 +1,27 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; playfield.asm
-; Handles drawing of the playfield for the Aphelion game for Atari 2600
+; Code to generate the playfield.
 ;
 ; Written by Craig Mackles
-; https://github.com/vulsin/aphelion-a2600
+; https://github.com/Vulsin/aphelion-a2600
 ;
-; Distributed under the MIT license
+; Distributed under the MIT License
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 DrawPlayfield subroutine
-  ldx #$00                    ; Black color
-  stx COLUBK                  ; Store background color
-  ldx #$2E                    ; Brown color
-  stx COLUPF                  ; Store playfield color
-
-  ldx #%00000001
-  stx CTRLPF                  ; Set playfield to mirror
-
-  ; First 164 scanlines are empty
+  ; First 164 scanlines are blank
   repeat 164
     sta WSYNC
   repend
 
-  ; Last 14 scanlines contain our "ground"
+  ; Next 21 scanlines are the "ground" of the playfield
   ldx #%11111111
   stx PF0
   stx PF1
   stx PF2
 
-  repeat 14
+  repeat 21
     sta WSYNC
   repend
 
-  rts                         ; Return from subroutine
+  rts
