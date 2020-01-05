@@ -43,9 +43,9 @@ GameInit:
   jsr InitPlrSprite                 ; Initialize the player sprite lookup tables
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Frame rendering
+; Game loop
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-StartFrame:
+GameLoop:
   ; Move the player to where they need to be
   lda PlayerXPos
   ldy #0
@@ -73,7 +73,7 @@ StartFrame:
 .VisibleScanline:
   jsr DrawPlayfield                   ; Render the playfield
 
-; See if we need to render the player's missile
+  ; See if we need to render the player's missile
   jsr PewPew
 
 .RenderPlayerSprite:                  ; Should we render the player sprite?
@@ -97,8 +97,6 @@ StartFrame:
   repend
   lda #0
   sta VBLANK
-
-  jmp StartFrame
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Input processing
@@ -143,6 +141,8 @@ CheckP0ButtonPress:
   sta MissileYPos
 
 EndInputChecks:
+
+  jmp GameLoop
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Handle horizontal positioning
