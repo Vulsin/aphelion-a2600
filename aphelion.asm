@@ -23,6 +23,9 @@
 GameInit:
   CLEAN_START
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Game initialization
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   lda #BackgroundColor
   sta COLUBK                    ; Store the background color
   lda #PlayfieldColor
@@ -33,28 +36,20 @@ GameInit:
   sta PlayerYPos                ; Start the player off at Y position 80
   lda #20
   sta PlayerXPos                ; Start the player off at X position 20
+  lda #3
+  sta Lives                     ; Start the player off with 3 lives
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Includes and game initialization
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   INCLUDE "playfield.asm"
   INCLUDE "player.asm"
+  INCLUDE "scoreboard.asm"
 
-  jsr InitPlrSprite                 ; Initialize the player sprite lookup tables
+  INIT_PLR_SPRITE               ; Initialize the player sprite lookup tables
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Game loop
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 GameLoop:
-  ; Move the player to where they need to be
-  lda PlayerXPos
-  ldy #0
-  jsr SetXPosition
-
-  sta WSYNC
-  sta HMOVE                         ; Apply horizontal offsets
-
-  ; Display VSYNC and VBLANK
+  ; Display VSYNC
   lda #2
   sta VBLANK
   sta VSYNC
@@ -63,16 +58,27 @@ GameLoop:
   repend
   lda #0
   sta VSYNC
-  repeat 37
+
+  ; Move sprites where they need to go
+  lda PlayerXPos
+  ldy #0
+  jsr SetXPosition
+
+  sta WSYNC
+  sta HMOVE                         ; Apply horizontal offsets
+
+  ; Display VBLANK
+  repeat 35
     sta WSYNC
   repend
   sta VBLANK
 
-  ; Render the visible 192 scanlines
+  ; Render the scoreboard
+  DRAW_SCOREBOARD
+
+  ; Render the other visible scanlines
   ldx #192
 .VisibleScanline:
-  jsr DrawPlayfield                   ; Render the playfield
-
   ; See if we need to render the player's missile
   jsr PewPew
 
@@ -84,7 +90,7 @@ GameLoop:
   bcc .RenderPlayer
   lda #0
 .RenderPlayer:
-  jsr DrawPlayer
+  DRAW_PLAYER
 
   dex
   bne .VisibleScanline
@@ -179,16 +185,10 @@ GameOver subroutine
   rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Sleep for 12 cycles (jsr and rts burn 6 cycles each)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-Sleep12Cycles subroutine
-  rts
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Include the source files for sprites and stuff
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   INCLUDE "sprites.asm"
-
+  INCLUDE "numbers.asm"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Pad ROM to 4 KB
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

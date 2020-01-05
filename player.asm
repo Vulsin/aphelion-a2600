@@ -11,29 +11,29 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Initializes the player sprite lookup tables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-InitPlrSprite subroutine
-  lda #<Spaceship
-  sta PlayerSpritePtr
-  lda #>Spaceship
-  sta PlayerSpritePtr+1
+  mac INIT_PLR_SPRITE
+    lda #<Spaceship
+    sta PlayerSpritePtr
+    lda #>Spaceship
+    sta PlayerSpritePtr+1
 
-  lda #<SpaceshipColor
-  sta PlayerColorPtr
-  lda #>SpaceshipColor
-  sta PlayerColorPtr+1
-  rts
+    lda #<SpaceshipColor
+    sta PlayerColorPtr
+    lda #>SpaceshipColor
+    sta PlayerColorPtr+1
+  endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Draws the player on the screen
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-DrawPlayer subroutine
-  tay
-  lda (PlayerSpritePtr),Y
-  sta WSYNC
-  sta GRP0
-  lda (PlayerColorPtr),Y
-  sta COLUP0
-  rts
+  mac DRAW_PLAYER
+    tay
+    lda (PlayerSpritePtr),Y
+    sta WSYNC
+    sta GRP0
+    lda (PlayerColorPtr),Y
+    sta COLUP0
+  endm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Draws the player's missile

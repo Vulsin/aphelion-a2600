@@ -9,16 +9,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 DrawPlayfield subroutine
-    ; First 164 scanlines are blank
-    repeat 164
-      sta WSYNC
-    repend
-
     ; Next 21 scanlines are the "ground" of the playfield
-    ldx #%11111111
-    stx PF0
-    stx PF1
-    stx PF2
+    ldy #%11111111
+    sty PF0
+    sty PF1
+    sty PF2
 
     repeat 21
       sta WSYNC

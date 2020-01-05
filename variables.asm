@@ -12,7 +12,7 @@
   ORG $80
 
 PlayerHeight      EQU   #7        ; Player sprite is 7 lines tall
-ScoreHeight       EQU   #7        ; Score digit height
+ScoreHeight       EQU   #5        ; Score digit height
 PlayerColor       EQU   #$A8      ; Blue color
 PlayfieldColor    EQU   #$F6      ; Brown color
 BackgroundColor   EQU   #$00      ; Black color
@@ -27,3 +27,6 @@ MissileYPos       byte            ; Define variable for missile Y position
 Score             byte            ; 2-digit score
 OnesOffset        byte            ; Digit ones lookup table offset
 TensOffset        byte            ; Digit tens lookup table offset
+ScoreSprite       byte            ; Sprite data for the scoreboard
+Lives             byte            ; Lives remaining
+LivesSprite       byte            ; Sprite data for lives remaining
