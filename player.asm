@@ -8,86 +8,46 @@
 ; Distributed under the MIT License
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  ORG $FFF2
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Initializes the player sprite lookup tables
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+InitPlrSprite subroutine
+  lda #<Spaceship
+  sta PlayerSpritePtr
+  lda #>Spaceship
+  sta PlayerSpritePtr+1
+
+  lda #<SpaceshipColor
+  sta PlayerColorPtr
+  lda #>SpaceshipColor
+  sta PlayerColorPtr+1
+  rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Spaceship Sprite
+; Draws the player on the screen
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-Spaceship
-  .byte #%10000000  ;$2A  #
-  .byte #%11000000  ;$2A  ##
-  .byte #%01111111  ;$34   ####
-  .byte #%01101110  ;$34   #  ##
-  .byte #%01001100  ;$34   ## ###
-  .byte #%01111000  ;$34   #######
-  .byte #%11000000  ;$2A  ##
-  .byte #%10000000  ;$2A  #
-
-SpaceshipColor
-  .byte #$2A;
-  .byte #$2A;
-  .byte #$34;
-  .byte #$34;
-  .byte #$34;
-  .byte #$34;
-  .byte #$2A;
-  .byte #$2A;
+DrawPlayer subroutine
+  tay
+  lda (PlayerSpritePtr),Y
+  sta WSYNC
+  sta GRP0
+  lda (PlayerColorPtr),Y
+  sta COLUP0
+  rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Thruster Sprite
+; Draws the player's missile
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-ThrusterFrame0
-  .byte #%00000011  ;$44         #
-  .byte #%00011111  ;$44       ###
-  .byte #%00111111  ;$44    ######
-  .byte #%11111111  ;$44     #####
-  .byte #%00011111  ;$44  ########
-  .byte #%00111111  ;$44    ######
-  .byte #%00000111  ;$44     #####
-  .byte #%00000001  ;$44        ##
-ThrusterFrame1
-  .byte #%00000001  ;$44         #
-  .byte #%01110011  ;$44     ## ##
-  .byte #%00011111  ;$44    ######
-  .byte #%00111111  ;$44      ####
-  .byte #%00001111  ;$44    ######
-  .byte #%00111111  ;$44     #####
-  .byte #%00011011  ;$44    ###  #
-  .byte #%00000001  ;$44         #
-ThrusterFrame2
-  .byte #%00000011  ;$44         #
-  .byte #%00011111  ;$44     ## ##
-  .byte #%00001111  ;$44    ######
-  .byte #%01111111  ;$44      ####
-  .byte #%00001111  ;$44   #######
-  .byte #%00111111  ;$44      ####
-  .byte #%00011011  ;$44     #####
-  .byte #%00000001  ;$44        ##
+PewPew subroutine
+  lda #0
+  cpx MissileXPos
+  bne .NoPewPew
+  inc MissileXPos             ; FIRE ZE MISSILES!
+  lda #%00000010              ; Enable the missile
+.NoPewPew
+  sta ENAM0                   ; Set the TIA missile register value
+  rts
 
-ThrusterColorFrame0
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-ThrusterColorFrame1
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-ThrusterColorFrame2
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
-  .byte #$44;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
