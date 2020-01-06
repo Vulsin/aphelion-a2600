@@ -25,8 +25,8 @@ PlayerAnimOffset  byte            ; Animation offset for the player
 MissileXPos       byte            ; Define variable for missile X position
 MissileYPos       byte            ; Define variable for missile Y position
 Score             byte            ; 2-digit score
-OnesOffset        byte            ; Digit ones lookup table offset
-TensOffset        byte            ; Digit tens lookup table offset
+OnesOffset        word            ; Digit ones lookup table offset
+TensOffset        word            ; Digit tens lookup table offset
 ScoreSprite       byte            ; Sprite data for the scoreboard
 Lives             byte            ; Lives remaining
 LivesSprite       byte            ; Sprite data for lives remaining

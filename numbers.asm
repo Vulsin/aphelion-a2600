@@ -8,7 +8,7 @@
 ; Distributed under the MIT License
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  ORG $FFCA
+  ;ORG $FFCA
 
 Numbers
   .byte %01110111          ; ### ###

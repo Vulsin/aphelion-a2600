@@ -30,20 +30,25 @@ GameInit:
   sta COLUBK                    ; Store the background color
   lda #PlayfieldColor
   sta COLUPF                    ; Store the playfield color
-  lda #PlayerColor
-  sta COLUP0                    ; Store the player color
   lda #80
   sta PlayerYPos                ; Start the player off at Y position 80
   lda #20
   sta PlayerXPos                ; Start the player off at X position 20
   lda #3
   sta Lives                     ; Start the player off with 3 lives
+  lda #0
+  sta Score                     ; Start the score at 0
 
-  INCLUDE "playfield.asm"
-  INCLUDE "player.asm"
-  INCLUDE "scoreboard.asm"
+  ; Initialize player sprite
+  lda #<Spaceship
+  sta PlayerSpritePtr
+  lda #>Spaceship
+  sta PlayerSpritePtr+1
 
-  INIT_PLR_SPRITE               ; Initialize the player sprite lookup tables
+  lda #<SpaceshipColor
+  sta PlayerColorPtr
+  lda #>SpaceshipColor
+  sta PlayerColorPtr+1
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Game loop
@@ -63,37 +68,108 @@ GameLoop:
   lda PlayerXPos
   ldy #0
   jsr SetXPosition
+  lda MissileXPos
+  ldy #1
+  jsr SetXPosition
 
   sta WSYNC
   sta HMOVE                         ; Apply horizontal offsets
 
   ; Display VBLANK
-  repeat 35
+  repeat 36
     sta WSYNC
   repend
+  lda #0
   sta VBLANK
 
   ; Render the scoreboard
-  DRAW_SCOREBOARD
+  ;jsr DrawScoreboard
+  ldx ScoreHeight
+ScoreboardLoop:
+  ; Player score
+  ldy TensOffset
+  lda Numbers,Y
+  and #$F0                          ; Hide the graphics for the ones digit
+  sta ScoreSprite
+
+  ldy OnesOffset
+  lda Numbers,Y
+  and #$0F                          ; Hide the graphics for the tens digit
+  ora ScoreSprite
+  sta ScoreSprite
+  sta WSYNC
+  sta PF1
+
+  ; Player lives remaining
+  ;ldy TensOffset+1
+  ;lda Numbers,Y
+  ;and #$F0
+  ;sta LivesSprite
+  ;ldy OnesOffset+1
+  ;lda Numbers,Y
+  ;and #$0F
+  ;ora LivesSprite
+  ;sta LivesSprite
+  ;sta PF1
+
+  ;ldy ScoreSprite
+  sta WSYNC
+
+  ;sty PF1
+  ;inc TensOffset
+  ;inc TensOffset+1
+  ;inc OnesOffset
+  ;inc OnesOffset+1
+
+  dex
+  ;sta PF1
+
+  bne ScoreboardLoop
+
+
+
+  sta WSYNC
+
+  lda #0
+  sta PF1
+  sta WSYNC
 
   ; Render the other visible scanlines
-  ldx #192
-.VisibleScanline:
+  ldx #145
+.SceneScanline:
   ; See if we need to render the player's missile
-  jsr PewPew
+  lda #0
+  cpx MissileXPos
+  bne .NoPewPew
+  inc MissileXPos             ; FIRE ZE MISSILES!
+  lda #%00000010              ; Enable the missile
+.NoPewPew
+  sta ENAM0                   ; Set the TIA missile register value
+
+
 
 .RenderPlayerSprite:                  ; Should we render the player sprite?
   txa
   sec
   sbc PlayerYPos
-  cmp PlayerHeight
+  cmp #PlayerHeight
   bcc .RenderPlayer
   lda #0
 .RenderPlayer:
-  DRAW_PLAYER
+  clc
+  adc PlayerAnimOffset
+  tay
+  lda (PlayerSpritePtr),Y
+  sta WSYNC
+  sta GRP0
+  lda (PlayerColorPtr),Y
+  sta COLUP0
 
   dex
-  bne .VisibleScanline
+  bne .SceneScanline
+
+  lda #0
+  sta PlayerAnimOffset                ; Reset the player anim offset to 0
 
   ; Overscan
   lda #2
@@ -185,10 +261,145 @@ GameOver subroutine
   rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Include the source files for sprites and stuff
+; Main game sprites
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  INCLUDE "sprites.asm"
-  INCLUDE "numbers.asm"
+  ORG $FF9A
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Spaceship Sprite
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Spaceship
+  .byte #%00000000  ;     XXXX
+  .byte #%01111000  ;   XXXXXXXXXX
+  .byte #%01111100  ;   XXXXXXXXXXXX
+  .byte #%11001111  ; XXXX    XXXXXXXXXX
+  .byte #%11001111  ; XXXX    XXXXXXXXXX
+  .byte #%01111100  ;   XXXXXXXXXXXX
+  .byte #%01111000  ;   XXXXXXXXXX
+  .byte #%00000000  ;     XXXX
+SpaceshipUp
+  .byte #%00000000  ;
+  .byte #%01111000  ;   XXXXXXXXXX
+  .byte #%01111100  ;   XXXXXXXXXXXX
+  .byte #%11111111  ; XXXX    XXXXXXXXXXX
+  .byte #%11001111  ; XXXXXXXXXXXXXXXXXXX
+  .byte #%01111100  ;   XXXXXXXXXXXX
+  .byte #%01111000  ;   XXXXXXXXXX
+  .byte #%00000000  ;
+SpaceshipDown
+  .byte #%00000000  ;
+  .byte #%01111000  ;   XXXXXXXXXX
+  .byte #%01111100  ;   XXXXXXXXXXXX
+  .byte #%11001111  ; XXXXXXXXXXXXXXXXXXX
+  .byte #%11111111  ; XXXX    XXXXXXXXXXX
+  .byte #%01111100  ;   XXXXXXXXXXXX
+  .byte #%01111000  ;   XXXXXXXXXX
+  .byte #%00000000  ;
+
+
+SpaceshipColor
+  .byte #$86;
+  .byte #$86;
+  .byte #$86;
+  .byte #$98;
+  .byte #$98;
+  .byte #$86;
+  .byte #$86;
+  .byte #$86;
+SpaceshipUpColor
+  .byte #$86;
+  .byte #$86;
+  .byte #$86;
+  .byte #$86;
+  .byte #$98;
+  .byte #$86;
+  .byte #$86;
+  .byte #$86;
+SpaceshipDownColor
+  .byte #$86;
+  .byte #$86;
+  .byte #$86;
+  .byte #$98;
+  .byte #$86;
+  .byte #$86;
+  .byte #$86;
+  .byte #$86;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Thruster Sprite
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Gonna add this one later
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Number sprites
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ORG $FFCA
+
+Numbers
+  .byte %01110111          ; ### ###
+  .byte %01010101          ; # # # #
+  .byte %01010101          ; # # # #
+  .byte %01010101          ; # # # #
+  .byte %01110111          ; ### ###
+
+  .byte %00010001          ;   #   #
+  .byte %00010001          ;   #   #
+  .byte %00010001          ;   #   #
+  .byte %00010001          ;   #   #
+  .byte %00010001          ;   #   #
+
+  .byte %01110111          ; ### ###
+  .byte %00010001          ;   #   #
+  .byte %01110111          ; ### ###
+  .byte %01000100          ; #   #
+  .byte %01110111          ; ### ###
+
+  .byte %01110111          ; ### ###
+  .byte %00010001          ;   #   #
+  .byte %00110011          ;  ##  ##
+  .byte %00010001          ;   #   #
+  .byte %01110111          ; ### ###
+
+  .byte %01010101          ; # # # #
+  .byte %01010101          ; # # # #
+  .byte %01110111          ; ### ###
+  .byte %00010001          ;   #   #
+  .byte %00010001          ;   #   #
+
+  .byte %01110111          ; ### ###
+  .byte %01000100          ; #   #
+  .byte %01110111          ; ### ###
+  .byte %00010001          ;   #   #
+  .byte %01110111          ; ### ###
+
+  .byte %01110111          ; ### ###
+  .byte %01000100          ; #   #
+  .byte %01110111          ; ### ###
+  .byte %01010101          ; # # # #
+  .byte %01110111          ; ### ###
+
+  .byte %01110111          ; ### ###
+  .byte %00010001          ;   #   #
+  .byte %00010001          ;   #   #
+  .byte %00010001          ;   #   #
+  .byte %00010001          ;   #   #
+
+  .byte %01110111          ; ### ###
+  .byte %01010101          ; # # # #
+  .byte %01110111          ; ### ###
+  .byte %01010101          ; # # # #
+  .byte %01110111          ; ### ###
+
+  .byte %01110111          ; ### ###
+  .byte %01010101          ; # # # #
+  .byte %01110111          ; ### ###
+  .byte %00010001          ;   #   #
+  .byte %01110111          ; ### ###
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Pad ROM to 4 KB
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
