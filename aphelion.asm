@@ -66,7 +66,7 @@ GameLoop:
   ldy #0
   jsr SetXPosition
   lda MissileXPos
-  ldy #1
+  ldy #2
   jsr SetXPosition
 
   sta WSYNC
@@ -134,11 +134,12 @@ ScoreboardLoop:
   ; Render the other visible scanlines
   ldx #195
 .SceneScanline:
-  ; See if we need to render the player's missile
   lda #0
-  cpx MissileXPos
+
+  ; See if we need to render the player's missile
+  cpx MissileYPos
   bne .NoPewPew
-  inc MissileXPos
+  inc MissileYPos
   lda #%00000010                      ; FIRE ZE MISSILES!!
 .NoPewPew
   sta ENAM0                           ; Set the TIA missile register value
@@ -236,7 +237,7 @@ CheckP0ButtonPress:
   adc #4
   sta MissileXPos
   lda PlayerYPos
-  adc #1
+  adc #10
   sta MissileYPos
 
 EndInputChecks:
@@ -247,9 +248,11 @@ EndInputChecks:
 ; Handle horizontal positioning
 ; A is the X position, in pixels
 ; Y is the object type
-;   0 = Player
-;   1 = Missile0
-;   2 = Missile1
+;   0 = Player 0
+;   1 = Player 1
+;   2 = Missile 0
+;   3 = Missile 1
+;   4 = Ball
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 SetXPosition subroutine
   sta WSYNC
