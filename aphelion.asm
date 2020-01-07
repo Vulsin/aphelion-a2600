@@ -139,7 +139,9 @@ ScoreboardLoop:
   ; See if we need to render the player's missile
   cpx MissileYPos
   bne .NoPewPew
-  inc MissileYPos
+  lda MissileYPos
+  adc #3
+  sta MissileYPos
   lda #%00000010                      ; FIRE ZE MISSILES!!
 .NoPewPew
   sta ENAM0                           ; Set the TIA missile register value
