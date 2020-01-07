@@ -30,25 +30,22 @@ GameInit:
   sta COLUBK                    ; Store the background color
   lda #PlayfieldColor
   sta COLUPF                    ; Store the playfield color
+  lda #$88
+  sta COLUP0
+  lda #45
+  sta PlayerYPos                ; Start the player off at Y position 45
   lda #80
-  sta PlayerYPos                ; Start the player off at Y position 80
-  lda #20
-  sta PlayerXPos                ; Start the player off at X position 20
+  sta PlayerXPos                ; Start the player off at X position 80
   lda #3
   sta Lives                     ; Start the player off with 3 lives
   lda #0
   sta Score                     ; Start the score at 0
 
-  ; Initialize player sprite
+  ; Initialize player sprites
   lda #<Spaceship
   sta PlayerSpritePtr
   lda #>Spaceship
   sta PlayerSpritePtr+1
-
-  lda #<SpaceshipColor
-  sta PlayerColorPtr
-  lda #>SpaceshipColor
-  sta PlayerColorPtr+1
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Game loop
@@ -135,16 +132,16 @@ ScoreboardLoop:
   sta WSYNC
 
   ; Render the other visible scanlines
-  ldx #145
+  ldx #195
 .SceneScanline:
   ; See if we need to render the player's missile
   lda #0
   cpx MissileXPos
   bne .NoPewPew
-  inc MissileXPos             ; FIRE ZE MISSILES!
-  lda #%00000010              ; Enable the missile
+  inc MissileXPos
+  lda #%00000010                      ; FIRE ZE MISSILES!!
 .NoPewPew
-  sta ENAM0                   ; Set the TIA missile register value
+  sta ENAM0                           ; Set the TIA missile register value
 
 
 
@@ -162,8 +159,6 @@ ScoreboardLoop:
   lda (PlayerSpritePtr),Y
   sta WSYNC
   sta GRP0
-  lda (PlayerColorPtr),Y
-  sta COLUP0
 
   dex
   bne .SceneScanline
@@ -187,30 +182,52 @@ CheckP0Up:
   lda #%00010000              ; Player 0 joystick up
   bit SWCHA
   bne CheckP0Down             ; If the bit doesn't match, skip
+  ; We don't want to allow movement past the middle of the screen
+  sec
+  ldy PlayerYPos
+  iny
+  cpy #96
+  bcs CheckP0Down
+.MovinOnUp
   inc PlayerYPos              ; Otherwise, increment player Y Position
-  lda #0
-  sta PlayerAnimOffset        ; Set the animation offset
 CheckP0Down:
   lda #%00100000              ; Player 0 joystick down
   bit SWCHA
   bne CheckP0Left             ; If the bit doesn't match, skip
+  ; Don't allow movement past the bottom of the screen
+  sec
+  ldy PlayerYPos
+  dey
+  cpy #1
+  bcc CheckP0Left
+.GoingDown
   dec PlayerYPos              ; Otherwise, decrement player Y position
-  lda #0
-  sta PlayerAnimOffset        ; Set the animation offset
 CheckP0Left:
   lda #%01000000              ; Player 0 joystick left
   bit SWCHA
   bne CheckP0Right            ; If the bit doesn't match, skip
+  ; Don't allow movement past the left boundary of the screen
+  sec
+  ldy PlayerXPos
+  dey
+  cpy #1
+  bcc CheckP0Right
+.SlideToTheLeft
   dec PlayerXPos              ; Otherwise, decrement player X position
-  lda PlayerHeight
-  sta PlayerAnimOffset        ; Set the animation offset
 CheckP0Right:
   lda #%10000000              ; Player 0 joystick right
   bit SWCHA
   bne CheckP0ButtonPress      ; If the bit doesn't match, check button press
+  ; Don't allow movement past the right boundary of the screen
+  sec
+  ldy PlayerXPos
+  iny
+  cpy #140
+  bcs CheckP0ButtonPress
+.SlideToTheRight
   inc PlayerXPos              ; Otherwise, increment player X position
   lda PlayerHeight
-  sta PlayerAnimOffset
+  lda #16
 CheckP0ButtonPress:
   lda #%10000000              ; Player 0 joystick button press
   bit INPT4
@@ -219,7 +236,7 @@ CheckP0ButtonPress:
   adc #4
   sta MissileXPos
   lda PlayerYPos
-  adc #5
+  adc #1
   sta MissileYPos
 
 EndInputChecks:
@@ -270,62 +287,21 @@ GameOver subroutine
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 Spaceship
-  .byte #%00000000  ;     XXXX
-  .byte #%01111000  ;   XXXXXXXXXX
-  .byte #%01111100  ;   XXXXXXXXXXXX
-  .byte #%11001111  ; XXXX    XXXXXXXXXX
-  .byte #%11001111  ; XXXX    XXXXXXXXXX
-  .byte #%01111100  ;   XXXXXXXXXXXX
-  .byte #%01111000  ;   XXXXXXXXXX
-  .byte #%00000000  ;     XXXX
-SpaceshipUp
   .byte #%00000000  ;
-  .byte #%01111000  ;   XXXXXXXXXX
-  .byte #%01111100  ;   XXXXXXXXXXXX
-  .byte #%11111111  ; XXXX    XXXXXXXXXXX
-  .byte #%11001111  ; XXXXXXXXXXXXXXXXXXX
-  .byte #%01111100  ;   XXXXXXXXXXXX
-  .byte #%01111000  ;   XXXXXXXXXX
+  .byte #%00010000  ;        ###
+  .byte #%01111100  ;  ###############
+  .byte #%01111100  ;  ###############
+  .byte #%01111100  ;  ###############
+  .byte #%01101100  ;  ######   ######
+  .byte #%00101000  ;     ###   ###
+  .byte #%00101000  ;     ###   ###
+  .byte #%00111000  ;     #########
+  .byte #%00010000  ;        ###
+  .byte #%00010000  ;        ###
+  .byte #%00010000  ;        ###
+  .byte #%00010000  ;        ###
+  .byte #%00010000  ;        ###
   .byte #%00000000  ;
-SpaceshipDown
-  .byte #%00000000  ;
-  .byte #%01111000  ;   XXXXXXXXXX
-  .byte #%01111100  ;   XXXXXXXXXXXX
-  .byte #%11001111  ; XXXXXXXXXXXXXXXXXXX
-  .byte #%11111111  ; XXXX    XXXXXXXXXXX
-  .byte #%01111100  ;   XXXXXXXXXXXX
-  .byte #%01111000  ;   XXXXXXXXXX
-  .byte #%00000000  ;
-
-
-SpaceshipColor
-  .byte #$86;
-  .byte #$86;
-  .byte #$86;
-  .byte #$98;
-  .byte #$98;
-  .byte #$86;
-  .byte #$86;
-  .byte #$86;
-SpaceshipUpColor
-  .byte #$86;
-  .byte #$86;
-  .byte #$86;
-  .byte #$86;
-  .byte #$98;
-  .byte #$86;
-  .byte #$86;
-  .byte #$86;
-SpaceshipDownColor
-  .byte #$86;
-  .byte #$86;
-  .byte #$86;
-  .byte #$98;
-  .byte #$86;
-  .byte #$86;
-  .byte #$86;
-  .byte #$86;
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Thruster Sprite
