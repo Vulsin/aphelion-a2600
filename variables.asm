@@ -13,9 +13,11 @@
 
 PlayerHeight      EQU   #15       ; Player sprite is 7 lines tall
 ScoreHeight       EQU   #5        ; Score digit height
-PlayerColor       EQU   #$A8      ; Blue color
+PlayerColor       EQU   #$88      ; Blue color
 PlayfieldColor    EQU   #$F6      ; Brown color
 BackgroundColor   EQU   #$00      ; Black color
+ScoreLabelXPos    EQU   #15       ; X position for the "SCORE" label
+LivesLabelXPos    EQU   #80       ; X position for the "LIVES" label
 
 PlayerXPos          byte          ; Define variable for player X position
 PlayerYPos          byte          ; Define variable for player Y position
@@ -30,3 +32,4 @@ TensOffset          word          ; Digit tens lookup table offset
 ScoreSprite         byte          ; Sprite data for the scoreboard
 Lives               byte          ; Lives remaining
 LivesSprite         byte          ; Sprite data for lives remaining
+Tmp                 byte          ; General-purpose temporary variable

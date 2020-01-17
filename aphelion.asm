@@ -30,15 +30,15 @@ GameInit:
   sta COLUBK                    ; Store the background color
   lda #PlayfieldColor
   sta COLUPF                    ; Store the playfield color
-  lda #$88
+  lda #PlayerColor
   sta COLUP0
   lda #45
   sta PlayerYPos                ; Start the player off at Y position 45
   lda #80
   sta PlayerXPos                ; Start the player off at X position 80
-  lda #3
+  lda #03
   sta Lives                     ; Start the player off with 3 lives
-  lda #0
+  lda #03
   sta Score                     ; Start the score at 0
 
   ; Initialize player sprites
@@ -69,6 +69,10 @@ GameLoop:
   ldy #2
   jsr SetXPosition
 
+  ; Determine score and lives counter digit offsets
+  jsr GetScoreOffset
+  jsr GetLivesOffset
+
   sta WSYNC
   sta HMOVE                         ; Apply horizontal offsets
 
@@ -79,51 +83,71 @@ GameLoop:
   lda #0
   sta VBLANK
 
-  ; Render the scoreboard
-  ;jsr DrawScoreboard
+  ; Clear all TIA registers before the next frame
+  lda #0
+  sta PF0                           ; Clear Playfield0 graphics
+  sta PF1                           ; Clear Playfield1 graphics
+  sta PF2                           ; Clear Playfield2 graphics
+  sta GRP0                          ; Clear Player0 graphics
+  sta GRP1                          ; Clear Player1 graphics
+  lda #00000000
+  sta CTRLPF                        ; Disable playfield reflection
+
+  ; Render the scoreboard (the actual score and how many lives we've got)
+  ; We'll use the playfield registers but will make it asymmetrical. The TIA
+  ; will render the playfield reflected or repeated, but we can set CTRLPF
+  ; to repeat and use cycle counts per scanline to our advantage.
+  ;
+  ; Update PF0 from clocks 84 to 147
+  ; Update PF1 from clocks 116 to 163
+  ; Update PF2 from clocks 148 to 195
+  ;
+  ; Comments will be prefixed with how many clocks we are burning per
+  ; instruction so we can keep count.
+
   ldx ScoreHeight
+  lda #0
+  sta PF2
+  sta WSYNC
 ScoreboardLoop:
-  ; Player score
-  ldy TensOffset
-  lda Numbers,Y
-  and #$F0                          ; Hide the graphics for the ones digit
-  sta ScoreSprite
+  ; Player score - start counting clocks!
+  ldy TensOffset          ; 2
+  lda Numbers,Y           ; 2
+  and #$F0                ; 5       Hide the graphics for the ones digit
+  sta ScoreSprite         ; 3
 
-  ldy OnesOffset
-  lda Numbers,Y
-  and #$0F                          ; Hide the graphics for the tens digit
-  ora ScoreSprite
-  sta ScoreSprite
-  sta WSYNC
-  sta PF1
+  ldy OnesOffset          ; 2
+  lda Numbers,Y           ; 2
+  and #$0F                ; 5       Hide the graphics for the tens digit
+  ora ScoreSprite         ; 5
+  sta ScoreSprite         ; 3
+  sta WSYNC               ; 3
+  sta PF1                 ; 3       Store this in PF1 on the left side
 
-  ; Player lives remaining
-  ;ldy TensOffset+1
-  ;lda Numbers,Y
-  ;and #$F0
-  ;sta LivesSprite
-  ;ldy OnesOffset+1
-  ;lda Numbers,Y
-  ;and #$0F
-  ;ora LivesSprite
-  ;sta LivesSprite
-  ;sta PF1
+  ; Lives remaining
+  ldy TensOffset+1        ; 2
+  lda Numbers,Y           ; 2
+  and #$F0                ; 5
+  sta LivesSprite         ; 3
 
-  ;ldy ScoreSprite
-  sta WSYNC
+  ldy OnesOffset+1        ; 2
+  lda Numbers,Y           ; 2
+  and #$0F                ; 5
+  ora LivesSprite         ; 5
+  sta LivesSprite         ; 3
+  sta PF1                 ; 3
+  ldy ScoreSprite         ; 2
+  sta WSYNC               ; 3
 
-  ;sty PF1
-  ;inc TensOffset
-  ;inc TensOffset+1
-  ;inc OnesOffset
-  ;inc OnesOffset+1
+  sty PF1                 ; 3
+  inc TensOffset          ; 2
+  inc TensOffset+1        ; 2
+  inc OnesOffset          ; 2
+  inc OnesOffset+1        ; 2
 
-  dex
-  ;sta PF1
-
+  dex                     ; 2
+  sta PF1                 ; 3
   bne ScoreboardLoop
-
-
 
   sta WSYNC
 
@@ -145,8 +169,6 @@ ScoreboardLoop:
   lda #%00000010                      ; FIRE ZE MISSILES!!
 .NoPewPew
   sta ENAM0                           ; Set the TIA missile register value
-
-
 
 .RenderPlayerSprite:                  ; Should we render the player sprite?
   txa
@@ -272,6 +294,64 @@ SetXPosition subroutine
   rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Score display processing
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Determine the offset for the lives remaining counter for the lookup tables.
+GetLivesOffset subroutine
+  ldx #1
+.LivesLoop
+  lda Lives,X
+  and #$0F
+  sta Tmp
+  asl
+  asl               ; Shift left twice (N*4)
+  adc Tmp
+  sta OnesOffset,X  ; Save to OnesOffset or OnesOffset+1
+
+  lda Lives,X
+  and #$F0
+  lsr
+  lsr               ; Shift right twice (N/4)
+  sta Tmp
+  lsr
+  lsr               ; Shift left twice more (N/16)
+  adc Tmp
+  sta TensOffset,X  ; Save to TensOffset or TensOffset+1
+  dex
+  bpl .LivesLoop
+  rts
+
+
+; Determine the offset for the score for the lookup tables.
+GetScoreOffset subroutine
+  ldx #1
+.ScoreLoop
+  lda Score,X
+  and #$0F
+  sta Tmp
+  asl
+  asl               ; Shift left twice (N*4)
+  adc Tmp
+  sta OnesOffset,X  ; Save to OnesOffset or OnesOffset+1
+
+  lda Score,X
+  and #$F0
+  lsr
+  lsr               ; Shift right twice (N/4)
+  sta Tmp
+  lsr
+  lsr               ; Shift left twice more (N/16)
+  adc Tmp
+  sta TensOffset,X  ; Save to TensOffset or TensOffset+1
+  dex
+  bpl .ScoreLoop
+  rts
+
+Sleep12Cycles subroutine
+  rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Game over
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 GameOver subroutine
@@ -312,6 +392,16 @@ Spaceship
 ; Thruster Sprite
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Gonna add this one later
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Scoreboard sprites
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+LivesIcon
+  .byte %0111000000   ;  ###
+  .byte %1111111000   ; #######
+  .byte %1110011111   ; ###  #####
+  .byte %1111111000   ; #######
+  .byte %0111000000   ;  ###
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Number sprites
